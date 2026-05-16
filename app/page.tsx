@@ -10,6 +10,7 @@ import {
   Plus,
   Moon,
   Sun,
+  Bell,
 } from "lucide-react";
 
 import { supabase } from "./lib/supabase";
@@ -95,17 +96,20 @@ export default function Home() {
     );
   }
 
-  const bg = dark
-    ? "bg-[#0B0714] text-white"
-    : "bg-[#F5F1FF] text-black";
+  const bg =
+    dark
+      ? "bg-[#0B0714] text-white"
+      : "bg-[#F5F1FF] text-black";
 
-  const card = dark
-    ? "bg-[#171124] text-white"
-    : "bg-white text-black";
+  const card =
+    dark
+      ? "bg-[#171124] text-white"
+      : "bg-white text-black";
 
-  const muted = dark
-    ? "text-gray-400"
-    : "text-gray-500";
+  const muted =
+    dark
+      ? "text-gray-400"
+      : "text-gray-500";
 
   return (
     <main
@@ -123,16 +127,25 @@ export default function Home() {
           </p>
         </div>
 
-        <button
-          onClick={() => setDark(!dark)}
-          className="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center"
-        >
-          {dark ? (
-            <Sun size={20} />
-          ) : (
-            <Moon size={20} />
-          )}
-        </button>
+        <div className="flex gap-2">
+          <a
+            href="/notifications"
+            className="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center"
+          >
+            <Bell size={20} />
+          </a>
+
+          <button
+            onClick={() => setDark(!dark)}
+            className="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center"
+          >
+            {dark ? (
+              <Sun size={20} />
+            ) : (
+              <Moon size={20} />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Hero */}
@@ -212,17 +225,13 @@ export default function Home() {
                   className={`min-w-[160px] ${card} rounded-2xl p-3 shadow-sm`}
                 >
                   <div className="h-24 rounded-2xl bg-purple-200 flex items-center justify-center text-4xl">
-                    {plan.category ===
-                    "Pizza Party"
+                    {plan.category === "Pizza Party"
                       ? "🍕"
-                      : plan.category ===
-                        "Movie Plan"
+                      : plan.category === "Movie Plan"
                       ? "🎬"
-                      : plan.category ===
-                        "Birthday"
+                      : plan.category === "Birthday"
                       ? "🎂"
-                      : plan.category ===
-                        "Hotel Dinner"
+                      : plan.category === "Hotel Dinner"
                       ? "🏨"
                       : "☕"}
                   </div>
@@ -232,8 +241,7 @@ export default function Home() {
                   </h3>
 
                   <p className={`text-sm ${muted}`}>
-                    ₹
-                    {plan.collected_amount} /
+                    ₹{plan.collected_amount} /
                     ₹{plan.goal_amount}
                   </p>
 
@@ -258,66 +266,6 @@ export default function Home() {
                 </motion.div>
               );
             })
-          )}
-        </div>
-      </section>
-
-      {/* Deals */}
-      <section className="px-5 mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-xl">
-            Top Deals
-          </h2>
-
-          <a
-            href="/deals"
-            className="text-purple-500 font-semibold text-sm"
-          >
-            View All
-          </a>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          {["CCD", "PVR", "Hotel"].map(
-            (item, index) => (
-              <motion.div
-                key={item}
-                initial={{
-                  opacity: 0,
-                  scale: 0.9,
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                }}
-                transition={{
-                  delay: index * 0.1,
-                }}
-                className={`${card} rounded-2xl p-3`}
-              >
-                <h3 className="font-bold text-sm">
-                  {item}
-                </h3>
-
-                <p className="text-purple-500 font-bold text-sm mt-2">
-                  {item === "CCD"
-                    ? "20% OFF"
-                    : item === "PVR"
-                    ? "Flat 15%"
-                    : "Up to 30%"}
-                </p>
-
-                <p
-                  className={`text-xs ${muted} mt-1`}
-                >
-                  {item === "CCD"
-                    ? "Above ₹499"
-                    : item === "PVR"
-                    ? "Movie tickets"
-                    : "Room booking"}
-                </p>
-              </motion.div>
-            )
           )}
         </div>
       </section>
