@@ -1,6 +1,6 @@
 "use client";
 
-import { Chrome } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 export default function Login() {
@@ -32,7 +32,7 @@ export default function Login() {
           onClick={loginWithGoogle}
           className="w-full bg-white text-black p-4 rounded-2xl font-bold mt-8 flex items-center justify-center gap-3"
         >
-          <Chrome size={22} />
+          <LogIn size={22} />
           Continue with Google
         </button>
 
