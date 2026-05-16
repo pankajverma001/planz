@@ -153,7 +153,7 @@ export default function CreatePlan() {
 
             <a
               href={`https://wa.me/?text=${encodeURIComponent(
-                `Join my PlanZ group plan: ${inviteLink}`
+                `Join my PlanZ group plan. Click this link: ${inviteLink}`
               )}`}
               target="_blank"
               className="block text-center w-full bg-green-500 p-4 rounded-2xl font-bold mt-3"
