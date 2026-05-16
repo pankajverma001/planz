@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
 
 export default function CreatePlan() {
@@ -20,6 +19,17 @@ export default function CreatePlan() {
 
     setLoading(true);
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoading(false);
+      alert("Please login first");
+      window.location.href = "/login";
+      return;
+    }
+
     const { error } = await supabase.from("plans").insert([
       {
         title,
@@ -27,6 +37,7 @@ export default function CreatePlan() {
         goal_amount: Number(goalAmount),
         collected_amount: Number(collectedAmount || 0),
         members,
+        user_id: user.id,
       },
     ]);
 
@@ -53,26 +64,14 @@ export default function CreatePlan() {
           ← Back
         </a>
 
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-purple-700 via-violet-600 to-pink-500 rounded-3xl p-6 mt-6 shadow-2xl"
-        >
-          <h1 className="text-3xl font-bold">
-            Create a Plan
-          </h1>
-
+        <div className="bg-gradient-to-br from-purple-700 via-violet-600 to-pink-500 rounded-3xl p-6 mt-6 shadow-2xl">
+          <h1 className="text-3xl font-bold">Create a Plan</h1>
           <p className="text-white/80 mt-2">
             Start saving with your people.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 35 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-5 mt-6 space-y-4"
-        >
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-5 mt-6 space-y-4">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -115,15 +114,14 @@ export default function CreatePlan() {
             <option>Hotel Dinner</option>
           </select>
 
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={createPlan}
             disabled={loading}
             className="w-full bg-purple-600 text-white p-4 rounded-2xl font-bold shadow-lg"
           >
             {loading ? "Creating..." : "Create Plan"}
-          </motion.button>
-        </motion.div>
+          </button>
+        </div>
       </div>
     </main>
   );
