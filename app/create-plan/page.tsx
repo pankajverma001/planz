@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
 
 export default function CreatePlan() {
@@ -46,32 +47,43 @@ export default function CreatePlan() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F1FF] p-5">
+    <main className="min-h-screen bg-[#0B0714] p-5 text-white">
       <div className="max-w-[430px] mx-auto">
-        <a href="/" className="text-purple-700 font-bold">
+        <a href="/" className="text-purple-300 font-bold">
           ← Back
         </a>
 
-        <h1 className="text-2xl font-bold mt-5">
-          Create a Plan
-        </h1>
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-purple-700 via-violet-600 to-pink-500 rounded-3xl p-6 mt-6 shadow-2xl"
+        >
+          <h1 className="text-3xl font-bold">
+            Create a Plan
+          </h1>
 
-        <p className="text-gray-500 text-sm mt-1">
-          Start saving with your friends and family.
-        </p>
+          <p className="text-white/80 mt-2">
+            Start saving with your people.
+          </p>
+        </motion.div>
 
-        <div className="bg-white rounded-3xl p-5 mt-6 space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 35 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-5 mt-6 space-y-4"
+        >
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-4 rounded-2xl bg-[#F5F1FF] outline-none"
+            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/50"
             placeholder="Plan name"
           />
 
           <input
             value={goalAmount}
             onChange={(e) => setGoalAmount(e.target.value)}
-            className="w-full p-4 rounded-2xl bg-[#F5F1FF] outline-none"
+            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/50"
             placeholder="Goal amount ₹"
             type="number"
           />
@@ -79,7 +91,7 @@ export default function CreatePlan() {
           <input
             value={collectedAmount}
             onChange={(e) => setCollectedAmount(e.target.value)}
-            className="w-full p-4 rounded-2xl bg-[#F5F1FF] outline-none"
+            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/50"
             placeholder="Collected amount ₹"
             type="number"
           />
@@ -87,14 +99,14 @@ export default function CreatePlan() {
           <input
             value={members}
             onChange={(e) => setMembers(e.target.value)}
-            className="w-full p-4 rounded-2xl bg-[#F5F1FF] outline-none"
+            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/50"
             placeholder="Members name"
           />
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full p-4 rounded-2xl bg-[#F5F1FF] outline-none"
+            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none"
           >
             <option>Coffee Party</option>
             <option>Pizza Party</option>
@@ -103,14 +115,15 @@ export default function CreatePlan() {
             <option>Hotel Dinner</option>
           </select>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={createPlan}
             disabled={loading}
-            className="w-full bg-purple-700 text-white p-4 rounded-2xl font-bold"
+            className="w-full bg-purple-600 text-white p-4 rounded-2xl font-bold shadow-lg"
           >
             {loading ? "Creating..." : "Create Plan"}
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
     </main>
   );
