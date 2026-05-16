@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, UserPlus, Trash2 } from "lucide-react";
+import { Users, UserPlus, Trash2, IndianRupee } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Plan = {
@@ -17,21 +17,14 @@ type Friend = {
 type GroupMember = {
   id: number;
   contribution_amount: number;
-
-  plans: {
-    title: string;
-  }[];
-
-  friends: {
-    name: string;
-  }[];
+  plans: { title: string }[];
+  friends: { name: string }[];
 };
 
 export default function GroupPlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
-
   const [planId, setPlanId] = useState("");
   const [friendId, setFriendId] = useState("");
 
@@ -42,18 +35,12 @@ export default function GroupPlans() {
   }, []);
 
   async function getPlans() {
-    const { data } = await supabase
-      .from("plans")
-      .select("id,title");
-
+    const { data } = await supabase.from("plans").select("id,title");
     setPlans(data || []);
   }
 
   async function getFriends() {
-    const { data } = await supabase
-      .from("friends")
-      .select("id,name");
-
+    const { data } = await supabase.from("friends").select("id,name");
     setFriends(data || []);
   }
 
@@ -66,9 +53,7 @@ export default function GroupPlans() {
         plans(title),
         friends(name)
       `)
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
     if (error) {
       alert(error.message);
@@ -84,15 +69,13 @@ export default function GroupPlans() {
       return;
     }
 
-    const { error } = await supabase
-      .from("group_members")
-      .insert([
-        {
-          plan_id: Number(planId),
-          friend_id: Number(friendId),
-          contribution_amount: 0,
-        },
-      ]);
+    const { error } = await supabase.from("group_members").insert([
+      {
+        plan_id: Number(planId),
+        friend_id: Number(friendId),
+        contribution_amount: 0,
+      },
+    ]);
 
     if (error) {
       alert(error.message);
@@ -101,17 +84,38 @@ export default function GroupPlans() {
 
     setPlanId("");
     setFriendId("");
+    getMembers();
+  }
+
+  async function addContribution(member: GroupMember) {
+    const amount = prompt("Enter member contribution amount ₹");
+
+    if (!amount) return;
+
+    const newAmount = member.contribution_amount + Number(amount);
+
+    const { error } = await supabase
+      .from("group_members")
+      .update({ contribution_amount: newAmount })
+      .eq("id", member.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await supabase.from("notifications").insert([
+      {
+        title: "Member Contribution Added",
+        message: `${member.friends?.[0]?.name} added ₹${amount} to ${member.plans?.[0]?.title}`,
+      },
+    ]);
 
     getMembers();
   }
 
   async function deleteMember(id: number) {
-    if (
-      !confirm(
-        "Remove this member from group plan?"
-      )
-    )
-      return;
+    if (!confirm("Remove this member from group plan?")) return;
 
     const { error } = await supabase
       .from("group_members")
@@ -129,42 +133,27 @@ export default function GroupPlans() {
   return (
     <main className="min-h-screen bg-[#0B0714] text-white p-5">
       <div className="max-w-[430px] mx-auto">
-        <a
-          href="/"
-          className="text-purple-300 font-bold"
-        >
+        <a href="/" className="text-purple-300 font-bold">
           ← Back
         </a>
 
         <div className="bg-gradient-to-br from-purple-700 to-pink-500 rounded-3xl p-6 mt-6">
           <Users size={38} />
-
-          <h1 className="text-3xl font-bold mt-4">
-            Group Plans
-          </h1>
-
+          <h1 className="text-3xl font-bold mt-4">Group Plans</h1>
           <p className="text-white/70 mt-1">
-            Add friends to shared saving plans.
+            Track individual friend contributions.
           </p>
         </div>
 
         <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mt-6 space-y-4">
           <select
             value={planId}
-            onChange={(e) =>
-              setPlanId(e.target.value)
-            }
+            onChange={(e) => setPlanId(e.target.value)}
             className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none"
           >
-            <option value="">
-              Select Plan
-            </option>
-
+            <option value="">Select Plan</option>
             {plans.map((plan) => (
-              <option
-                key={plan.id}
-                value={plan.id}
-              >
+              <option key={plan.id} value={plan.id}>
                 {plan.title}
               </option>
             ))}
@@ -172,20 +161,12 @@ export default function GroupPlans() {
 
           <select
             value={friendId}
-            onChange={(e) =>
-              setFriendId(e.target.value)
-            }
+            onChange={(e) => setFriendId(e.target.value)}
             className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none"
           >
-            <option value="">
-              Select Friend
-            </option>
-
+            <option value="">Select Friend</option>
             {friends.map((friend) => (
-              <option
-                key={friend.id}
-                value={friend.id}
-              >
+              <option key={friend.id} value={friend.id}>
                 {friend.name}
               </option>
             ))}
@@ -209,39 +190,37 @@ export default function GroupPlans() {
             members.map((member) => (
               <div
                 key={member.id}
-                className="bg-white/10 border border-white/10 rounded-3xl p-5 flex items-center justify-between"
+                className="bg-white/10 border border-white/10 rounded-3xl p-5"
               >
-                <div>
-                  <h2 className="font-bold text-lg">
-                    {
-                      member.friends?.[0]
-                        ?.name
-                    }
-                  </h2>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-bold text-lg">
+                      {member.friends?.[0]?.name}
+                    </h2>
 
-                  <p className="text-white/50 text-sm">
-                    Plan:{" "}
-                    {
-                      member.plans?.[0]
-                        ?.title
-                    }
-                  </p>
+                    <p className="text-white/50 text-sm">
+                      Plan: {member.plans?.[0]?.title}
+                    </p>
 
-                  <p className="text-purple-300 text-sm mt-1">
-                    Contribution: ₹
-                    {
-                      member.contribution_amount
-                    }
-                  </p>
+                    <p className="text-purple-300 text-sm mt-1">
+                      Contribution: ₹{member.contribution_amount}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => deleteMember(member.id)}
+                    className="w-11 h-11 rounded-2xl bg-red-500 flex items-center justify-center"
+                  >
+                    <Trash2 size={20} />
+                  </button>
                 </div>
 
                 <button
-                  onClick={() =>
-                    deleteMember(member.id)
-                  }
-                  className="w-11 h-11 rounded-2xl bg-red-500 flex items-center justify-center"
+                  onClick={() => addContribution(member)}
+                  className="w-full bg-green-500 text-white p-3 rounded-2xl font-bold mt-4 flex items-center justify-center gap-2"
                 >
-                  <Trash2 size={20} />
+                  <IndianRupee size={18} />
+                  Add Member Contribution
                 </button>
               </div>
             ))
