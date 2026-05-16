@@ -33,6 +33,27 @@ export default function Plans() {
     setPlans(data || []);
   }
 
+  async function contribute(plan: Plan) {
+    const amount = prompt("Enter contribution amount ₹");
+
+    if (!amount) return;
+
+    const newAmount = plan.collected_amount + Number(amount);
+
+    const { error } = await supabase
+      .from("plans")
+      .update({ collected_amount: newAmount })
+      .eq("id", plan.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert("Contribution added!");
+    getPlans();
+  }
+
   return (
     <main className="min-h-screen bg-[#F5F1FF] p-5">
       <div className="max-w-[430px] mx-auto">
@@ -71,6 +92,13 @@ export default function Plans() {
                 <p className="text-gray-500 text-sm mt-3">
                   Members: {plan.members}
                 </p>
+
+                <button
+                  onClick={() => contribute(plan)}
+                  className="w-full bg-purple-700 text-white p-3 rounded-2xl font-bold mt-4"
+                >
+                  Contribute Money
+                </button>
               </div>
             );
           })}
