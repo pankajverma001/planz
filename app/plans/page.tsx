@@ -78,6 +78,16 @@ export default function Plans() {
     getPlans();
   }
 
+  function inviteFriends(plan: Plan) {
+    const message = `Join my PlanZ savings plan: ${plan.title}. Goal: ₹${plan.goal_amount}. Let's save together!`;
+
+    const url = `https://wa.me/?text=${encodeURIComponent(
+      message
+    )}`;
+
+    window.open(url, "_blank");
+  }
+
   return (
     <main className="min-h-screen bg-[#F5F1FF] p-5">
       <div className="max-w-[430px] mx-auto">
@@ -149,6 +159,15 @@ export default function Plans() {
                     className="w-full bg-purple-700 text-white p-3 rounded-2xl font-bold mt-4"
                   >
                     Contribute Money
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      inviteFriends(plan)
+                    }
+                    className="w-full bg-green-500 text-white p-3 rounded-2xl font-bold mt-3"
+                  >
+                    Invite Friends on WhatsApp
                   </button>
 
                   <button
