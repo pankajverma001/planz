@@ -12,7 +12,9 @@ type Notification = {
 };
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<
+    Notification[]
+  >([]);
 
   useEffect(() => {
     getNotifications();
@@ -44,7 +46,9 @@ export default function Notifications() {
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
 
     if (error) {
       alert(error.message);
@@ -57,11 +61,17 @@ export default function Notifications() {
   return (
     <main className="min-h-screen bg-[#0B0714] text-white p-5">
       <div className="max-w-[430px] mx-auto">
-        <a href="/" className="text-purple-300 font-bold">
+        <a
+          href="/"
+          className="text-purple-300 font-bold"
+        >
           ← Back
         </a>
 
-        <h1 className="text-3xl font-bold mt-5">Notifications</h1>
+        <h1 className="text-3xl font-bold mt-5">
+          Notifications
+        </h1>
+
         <p className="text-white/50 mt-1">
           Live updates from your PlanZ activity.
         </p>
@@ -82,12 +92,22 @@ export default function Notifications() {
                 </div>
 
                 <div className="flex-1">
-                  <h2 className="font-bold">{item.title}</h2>
+                  <h2 className="font-bold">
+                    {item.title}
+                  </h2>
+
                   <p className="text-white/50 text-sm mt-1">
                     {item.message}
                   </p>
+
                   <p className="text-purple-300 text-xs mt-2">
-                    {new Date(item.created_at).toLocaleString()}
+                    {new Date(
+                      item.created_at
+                    ).toLocaleString("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
                   </p>
                 </div>
               </div>
