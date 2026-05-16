@@ -33,7 +33,7 @@ export default function Login() {
           className="w-full bg-white text-black p-4 rounded-2xl font-bold mt-8 flex items-center justify-center gap-3"
         >
           <LogIn size={22} />
-          Continue with Google
+          Continue with Google Securely
         </button>
 
         <a
