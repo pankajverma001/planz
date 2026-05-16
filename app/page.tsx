@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import {
-  Home as HomeIcon,
-  Wallet,
-  Ticket,
-  User,
-  Plus,
-  Moon,
-  Sun,
   Bell,
+  Moon,
+  Plus,
+  Home,
+  Wallet,
+  User,
+  Ticket,
 } from "lucide-react";
 
 import { supabase } from "./lib/supabase";
@@ -24,20 +22,25 @@ type Plan = {
   members: string;
 };
 
-export default function Home() {
+export default function HomePage() {
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [dark, setDark] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  const [userName, setUserName] = useState("User");
 
   useEffect(() => {
+    loadUser();
     getPlans();
-
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1800);
-
-    return () => clearTimeout(timer);
   }, []);
+
+  async function loadUser() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.user_metadata?.full_name) {
+      setUserName(user.user_metadata.full_name);
+    }
+  }
 
   async function getPlans() {
     const { data, error } = await supabase
@@ -46,327 +49,249 @@ export default function Home() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      alert(error.message);
+      console.log(error.message);
       return;
     }
 
     setPlans(data || []);
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#0B0714] flex items-center justify-center text-white">
-        <motion.div
-          initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{
-              repeat: Infinity,
-              duration: 1.5,
-              ease: "linear",
-            }}
-            className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-purple-700 to-pink-500 flex items-center justify-center text-4xl font-bold shadow-2xl"
-          >
-            Z
-          </motion.div>
-
-          <motion.h1
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-4xl font-bold mt-6"
-          >
-            PlanZ
-          </motion.h1>
-
-          <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-white/60 mt-2"
-          >
-            Save Together. Celebrate Better.
-          </motion.p>
-        </motion.div>
-      </main>
-    );
-  }
-
-  const bg =
-    dark
-      ? "bg-[#0B0714] text-white"
-      : "bg-[#F5F1FF] text-black";
-
-  const card =
-    dark
-      ? "bg-[#171124] text-white"
-      : "bg-white text-black";
-
-  const muted =
-    dark
-      ? "text-gray-400"
-      : "text-gray-500";
-
   return (
     <main
-      className={`min-h-screen pb-24 transition-all duration-500 ${bg}`}
+      className={`min-h-screen pb-28 transition-all duration-300 ${
+        darkMode
+          ? "bg-[#0B0714] text-white"
+          : "bg-[#F4F1FA] text-black"
+      }`}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-5">
-        <div>
-          <h1 className="text-2xl font-bold">
-            Hi, Pankaj 👋
-          </h1>
+      <div className="max-w-[430px] mx-auto p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold">
+              Hi, {userName} 👋
+            </h1>
 
-          <p className={`${muted} text-sm`}>
-            Good Evening!
+            <p className="text-gray-500 mt-1">
+              Good Evening!
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              className="w-14 h-14 rounded-full bg-purple-700 text-white flex items-center justify-center"
+            >
+              <Bell />
+            </button>
+
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="w-14 h-14 rounded-full bg-purple-700 text-white flex items-center justify-center"
+            >
+              <Moon />
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-purple-700 to-pink-500 rounded-[32px] p-7 mt-8 shadow-xl">
+          <h2 className="text-5xl font-bold text-white leading-tight">
+            Save Together,
+            <br />
+            Celebrate Better
+          </h2>
+
+          <p className="text-white/80 mt-5 text-lg">
+            Create plans and save money with your friends,
+            family and partner.
           </p>
-        </div>
 
-        <div className="flex gap-2">
           <a
-            href="/notifications"
-            className="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center"
+            href="/create-plan"
+            className="inline-block mt-8 bg-white text-purple-700 px-8 py-4 rounded-2xl font-bold text-lg"
           >
-            <Bell size={20} />
+            Create a Plan
           </a>
-
-          <button
-            onClick={() => setDark(!dark)}
-            className="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center"
-          >
-            {dark ? (
-              <Sun size={20} />
-            ) : (
-              <Moon size={20} />
-            )}
-          </button>
         </div>
-      </div>
 
-      {/* Hero */}
-      <motion.div
-        initial={{ opacity: 0, y: 35 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mx-5 bg-gradient-to-br from-purple-700 via-violet-600 to-pink-500 rounded-3xl p-6 text-white shadow-xl"
-      >
-        <h2 className="text-3xl font-bold leading-tight">
-          Save Together,
-          <br />
-          Celebrate Better
-        </h2>
-
-        <p className="text-sm text-white/90 mt-3 max-w-[260px]">
-          Create plans and save money with your friends,
-          family and partner.
-        </p>
-
-        <a
-          href="/create-plan"
-          className="inline-block mt-5 bg-white text-purple-700 px-5 py-3 rounded-2xl font-bold"
-        >
-          Create a Plan
-        </a>
-      </motion.div>
-
-      {/* Plans */}
-      <section className="px-5 mt-7">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-xl">
+        <div className="flex items-center justify-between mt-10">
+          <h2 className="text-3xl font-bold">
             Your Plans
           </h2>
 
           <a
             href="/plans"
-            className="text-purple-500 font-semibold text-sm"
+            className="text-purple-500 font-bold"
           >
             View All
           </a>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto">
-          {plans.length === 0 ? (
+        <div className="flex gap-4 overflow-x-auto mt-5 pb-3">
+          {plans.map((plan) => (
             <div
-              className={`${card} rounded-2xl p-5 ${muted}`}
+              key={plan.id}
+              className={`min-w-[250px] rounded-3xl p-4 shadow-lg ${
+                darkMode
+                  ? "bg-white/10 border border-white/10"
+                  : "bg-white"
+              }`}
             >
-              No plans yet.
-            </div>
-          ) : (
-            plans.slice(0, 5).map((plan, index) => {
-              const percent = Math.min(
-                (plan.collected_amount /
-                  plan.goal_amount) *
-                  100,
-                100
-              );
-
-              return (
-                <motion.div
-                  key={plan.id}
-                  initial={{
-                    opacity: 0,
-                    y: 25,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  transition={{
-                    delay: index * 0.1,
-                  }}
-                  whileHover={{
-                    scale: 1.04,
-                  }}
-                  className={`min-w-[160px] ${card} rounded-2xl p-3 shadow-sm`}
-                >
-                  <div className="h-24 rounded-2xl bg-purple-200 flex items-center justify-center text-4xl">
-                    {plan.category === "Pizza Party"
-                      ? "🍕"
-                      : plan.category === "Movie Plan"
-                      ? "🎬"
-                      : plan.category === "Birthday"
-                      ? "🎂"
-                      : plan.category === "Hotel Dinner"
-                      ? "🏨"
-                      : "☕"}
-                  </div>
-
-                  <h3 className="font-bold mt-3">
-                    {plan.title}
-                  </h3>
-
-                  <p className={`text-sm ${muted}`}>
-                    ₹{plan.collected_amount} /
-                    ₹{plan.goal_amount}
-                  </p>
-
-                  <div className="w-full h-2 bg-gray-300 rounded-full mt-3">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{
-                        width: `${percent}%`,
-                      }}
-                      transition={{
-                        duration: 0.8,
-                      }}
-                      className="h-2 bg-purple-600 rounded-full"
-                    />
-                  </div>
-
-                  <p
-                    className={`text-xs ${muted} mt-2`}
-                  >
-                    {plan.members}
-                  </p>
-                </motion.div>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      {/* Quick Access */}
-      <section className="px-5 mt-8">
-        <h2 className="font-bold text-xl mb-4">
-          Quick Access
-        </h2>
-
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            ["☕", "Cafes", "/deals"],
-            ["🏨", "Hotels", "/deals"],
-            ["🎬", "Movies", "/movies"],
-            ["🧾", "Split", "/split-bill"],
-          ].map((item, index) => (
-            <motion.a
-              key={item[1]}
-              href={item[2]}
-              initial={{
-                opacity: 0,
-                y: 18,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                delay: index * 0.08,
-              }}
-              whileTap={{
-                scale: 0.92,
-              }}
-              className={`${card} rounded-2xl p-4 text-center`}
-            >
-              <div className="text-3xl">
-                {item[0]}
+              <div className="w-full h-32 rounded-3xl bg-[#E9D8FD] flex items-center justify-center text-6xl">
+                {plan.category === "Coffee Party"
+                  ? "☕"
+                  : plan.category === "Movie Plan"
+                  ? "🎬"
+                  : "🍕"}
               </div>
 
-              <p className="text-sm mt-2 font-semibold">
-                {item[1]}
+              <h3 className="text-2xl font-bold mt-4">
+                {plan.title}
+              </h3>
+
+              <p className="text-gray-500 mt-1">
+                ₹{plan.collected_amount} / ₹
+                {plan.goal_amount}
               </p>
-            </motion.a>
+
+              <div className="w-full h-3 bg-gray-200 rounded-full mt-4 overflow-hidden">
+                <div
+                  className="h-full bg-purple-600 rounded-full"
+                  style={{
+                    width: `${
+                      (plan.collected_amount /
+                        plan.goal_amount) *
+                      100
+                    }%`,
+                  }}
+                />
+              </div>
+
+              <p className="text-sm text-gray-500 mt-3">
+                {plan.members}
+              </p>
+            </div>
           ))}
         </div>
-      </section>
 
-      {/* Bottom Nav */}
+        <div className="mt-10">
+          <h2 className="text-3xl font-bold">
+            Quick Access
+          </h2>
+
+          <div className="grid grid-cols-2 gap-4 mt-5">
+            <a
+              href="/group-plans"
+              className={`rounded-3xl p-6 text-center ${
+                darkMode
+                  ? "bg-white/10 border border-white/10"
+                  : "bg-white"
+              }`}
+            >
+              <div className="text-5xl">👥</div>
+              <p className="font-bold mt-3">
+                Groups
+              </p>
+            </a>
+
+            <a
+              href="/group-chat"
+              className={`rounded-3xl p-6 text-center ${
+                darkMode
+                  ? "bg-white/10 border border-white/10"
+                  : "bg-white"
+              }`}
+            >
+              <div className="text-5xl">💬</div>
+              <p className="font-bold mt-3">
+                Chats
+              </p>
+            </a>
+
+            <a
+              href="/split-bill"
+              className={`rounded-3xl p-6 text-center ${
+                darkMode
+                  ? "bg-white/10 border border-white/10"
+                  : "bg-white"
+              }`}
+            >
+              <div className="text-5xl">🧾</div>
+              <p className="font-bold mt-3">
+                Split
+              </p>
+            </a>
+
+            <a
+              href="/profile"
+              className={`rounded-3xl p-6 text-center ${
+                darkMode
+                  ? "bg-white/10 border border-white/10"
+                  : "bg-white"
+              }`}
+            >
+              <div className="text-5xl">👤</div>
+              <p className="font-bold mt-3">
+                Profile
+              </p>
+            </a>
+          </div>
+        </div>
+      </div>
+
       <div
-        className={`${card} fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto border-t border-purple-200 flex justify-around py-3`}
+        className={`fixed bottom-0 left-0 right-0 border-t backdrop-blur-xl ${
+          darkMode
+            ? "bg-[#0B0714]/90 border-white/10"
+            : "bg-white/90 border-gray-200"
+        }`}
       >
-        <a
-          href="/"
-          className="flex flex-col items-center text-purple-500"
-        >
-          <HomeIcon size={22} />
-          <span className="text-xs mt-1">
-            Home
-          </span>
-        </a>
+        <div className="max-w-[430px] mx-auto flex items-center justify-around py-4">
+          <a
+            href="/"
+            className="flex flex-col items-center text-purple-600"
+          >
+            <Home size={26} />
+            <span className="text-sm mt-1">
+              Home
+            </span>
+          </a>
 
-        <a
-          href="/plans"
-          className={`flex flex-col items-center ${muted}`}
-        >
-          <Wallet size={22} />
-          <span className="text-xs mt-1">
-            Plans
-          </span>
-        </a>
+          <a
+            href="/plans"
+            className="flex flex-col items-center text-gray-500"
+          >
+            <Wallet size={26} />
+            <span className="text-sm mt-1">
+              Plans
+            </span>
+          </a>
 
-        <motion.a
-          whileTap={{
-            scale: 0.9,
-          }}
-          href="/create-plan"
-          className="bg-purple-700 text-white w-14 h-14 rounded-full -mt-7 flex items-center justify-center shadow-lg"
-        >
-          <Plus size={28} />
-        </motion.a>
+          <a
+            href="/create-plan"
+            className="w-16 h-16 rounded-full bg-purple-700 text-white flex items-center justify-center -mt-10 shadow-2xl"
+          >
+            <Plus size={32} />
+          </a>
 
-        <a
-          href="/deals"
-          className={`flex flex-col items-center ${muted}`}
-        >
-          <Ticket size={22} />
-          <span className="text-xs mt-1">
-            Deals
-          </span>
-        </a>
+          <a
+            href="/deals"
+            className="flex flex-col items-center text-gray-500"
+          >
+            <Ticket size={26} />
+            <span className="text-sm mt-1">
+              Deals
+            </span>
+          </a>
 
-        <a
-          href="/profile"
-          className={`flex flex-col items-center ${muted}`}
-        >
-          <User size={22} />
-          <span className="text-xs mt-1">
-            Profile
-          </span>
-        </a>
+          <a
+            href="/profile"
+            className="flex flex-col items-center text-gray-500"
+          >
+            <User size={26} />
+            <span className="text-sm mt-1">
+              Profile
+            </span>
+          </a>
+        </div>
       </div>
     </main>
   );
