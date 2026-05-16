@@ -18,7 +18,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: "https://planz-theta.vercel.app/",
+        emailRedirectTo: "https://planz-theta.vercel.app",
       },
     });
 
@@ -33,16 +33,18 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F1FF] p-5 flex items-center justify-center">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-[430px]">
-        <h1 className="text-3xl font-bold text-purple-700">PlanZ</h1>
+    <main className="min-h-screen bg-[#0B0714] text-white p-5 flex items-center justify-center">
+      <div className="bg-white/10 border border-white/10 rounded-3xl p-6 w-full max-w-[430px]">
+        <h1 className="text-4xl font-bold text-purple-300">
+          PlanZ
+        </h1>
 
-        <p className="text-gray-500 mt-2">
-          Save Together. Celebrate Better.
+        <p className="text-white/60 mt-2">
+          Login to save your personal plans.
         </p>
 
         <input
-          className="w-full p-4 rounded-2xl bg-[#F5F1FF] outline-none mt-8"
+          className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none mt-8 placeholder:text-white/40"
           placeholder="Enter your email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -58,7 +60,7 @@ export default function Login() {
 
         <a
           href="/"
-          className="block text-center text-purple-700 font-bold mt-5"
+          className="block text-center text-purple-300 font-bold mt-5"
         >
           Back Home
         </a>
