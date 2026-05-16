@@ -1,65 +1,203 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  Home as HomeIcon,
+  Wallet,
+  Ticket,
+  User,
+  Plus,
+} from "lucide-react";
+import { supabase } from "./lib/supabase";
+
+type Plan = {
+  id: number;
+  title: string;
+  category: string;
+  goal_amount: number;
+  collected_amount: number;
+  members: string;
+};
 
 export default function Home() {
+  const [plans, setPlans] = useState<Plan[]>([]);
+
+  useEffect(() => {
+    getPlans();
+  }, []);
+
+  async function getPlans() {
+    const { data, error } = await supabase
+      .from("plans")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setPlans(data || []);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-[#F5F1FF] pb-24">
+      <div className="flex items-center justify-between p-5">
+  <div>
+    <h1 className="text-2xl font-bold text-black">
+      Hi, Pankaj 👋
+    </h1>
+
+    <p className="text-gray-500 text-sm">
+      Good Evening!
+    </p>
+  </div>
+
+  <a
+    href="/login"
+    className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold"
+  >
+    P
+  </a>
+</div>
+
+      <div className="mx-5 bg-gradient-to-br from-purple-700 via-violet-600 to-pink-500 rounded-3xl p-6 text-white">
+        <h2 className="text-3xl font-bold leading-tight">
+          Save Together,
+          <br />
+          Celebrate Better
+        </h2>
+
+        <p className="text-sm text-white/90 mt-3 max-w-[260px]">
+          Create plans and save money with your friends, family and partner.
+        </p>
+
+        <a
+          href="/create-plan"
+          className="inline-block mt-5 bg-white text-purple-700 px-5 py-3 rounded-2xl font-bold"
+        >
+          Create a Plan
+        </a>
+      </div>
+
+      <section className="px-5 mt-7">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-xl">Your Plans</h2>
+          <button className="text-purple-700 font-semibold text-sm">
+            View All
+          </button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="flex gap-4 overflow-x-auto">
+          {plans.length === 0 ? (
+            <div className="bg-white rounded-2xl p-5 text-gray-500">
+              No plans yet. Create your first plan.
+            </div>
+          ) : (
+            plans.map((plan) => {
+              const percent = Math.min(
+                (plan.collected_amount / plan.goal_amount) * 100,
+                100
+              );
+
+              return (
+                <div
+                  key={plan.id}
+                  className="min-w-[160px] bg-white rounded-2xl p-3 shadow-sm"
+                >
+                  <div className="h-24 rounded-2xl bg-[#E9D5FF] flex items-center justify-center text-4xl">
+                    {plan.category === "Pizza Party"
+                      ? "🍕"
+                      : plan.category === "Movie Plan"
+                      ? "🎬"
+                      : plan.category === "Birthday"
+                      ? "🎂"
+                      : plan.category === "Hotel Dinner"
+                      ? "🏨"
+                      : "☕"}
+                  </div>
+
+                  <h3 className="font-bold mt-3">{plan.title}</h3>
+
+                  <p className="text-sm text-gray-500">
+                    ₹{plan.collected_amount} / ₹{plan.goal_amount}
+                  </p>
+
+                  <div className="w-full h-2 bg-gray-200 rounded-full mt-3">
+                    <div
+                      className="h-2 bg-purple-600 rounded-full"
+                      style={{ width: `${percent}%` }}
+                    ></div>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-2">
+                    {plan.members}
+                  </p>
+                </div>
+              );
+            })
+          )}
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="px-5 mt-8">
+        <h2 className="font-bold text-xl mb-4">Top Deals</h2>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl p-3">
+            <h3 className="font-bold text-sm">CCD</h3>
+            <p className="text-purple-700 font-bold text-sm mt-2">
+              20% OFF
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Above ₹499</p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-3">
+            <h3 className="font-bold text-sm">PVR</h3>
+            <p className="text-purple-700 font-bold text-sm mt-2">
+              Flat 15%
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Movie tickets</p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-3">
+            <h3 className="font-bold text-sm">Hotel</h3>
+            <p className="text-purple-700 font-bold text-sm mt-2">
+              Up to 30%
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Room booking</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t flex justify-around py-3">
+        <button className="flex flex-col items-center text-purple-700">
+          <HomeIcon size={22} />
+          <span className="text-xs mt-1">Home</span>
+        </button>
+
+        <button className="flex flex-col items-center text-gray-500">
+          <Wallet size={22} />
+          <span className="text-xs mt-1">Plans</span>
+        </button>
+
+        <a
+          href="/create-plan"
+          className="bg-purple-700 text-white w-14 h-14 rounded-full -mt-7 flex items-center justify-center shadow-lg"
+        >
+          <Plus size={28} />
+        </a>
+
+        <button className="flex flex-col items-center text-gray-500">
+          <Ticket size={22} />
+          <span className="text-xs mt-1">Deals</span>
+        </button>
+
+        <button className="flex flex-col items-center text-gray-500">
+          <User size={22} />
+          <span className="text-xs mt-1">Profile</span>
+        </button>
+      </div>
+    </main>
   );
 }
