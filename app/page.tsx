@@ -43,23 +43,20 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#F5F1FF] pb-24">
       <div className="flex items-center justify-between p-5">
-  <div>
-    <h1 className="text-2xl font-bold text-black">
-      Hi, Pankaj 👋
-    </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-black">
+            Hi, Pankaj 👋
+          </h1>
+          <p className="text-gray-500 text-sm">Good Evening!</p>
+        </div>
 
-    <p className="text-gray-500 text-sm">
-      Good Evening!
-    </p>
-  </div>
-
-  <a
-    href="/login"
-    className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold"
-  >
-    P
-  </a>
-</div>
+        <a
+          href="/login"
+          className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold"
+        >
+          P
+        </a>
+      </div>
 
       <div className="mx-5 bg-gradient-to-br from-purple-700 via-violet-600 to-pink-500 rounded-3xl p-6 text-white">
         <h2 className="text-3xl font-bold leading-tight">
@@ -83,9 +80,13 @@ export default function Home() {
       <section className="px-5 mt-7">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-xl">Your Plans</h2>
-          <button className="text-purple-700 font-semibold text-sm">
+
+          <a
+            href="/plans"
+            className="text-purple-700 font-semibold text-sm"
+          >
             View All
-          </button>
+          </a>
         </div>
 
         <div className="flex gap-4 overflow-x-auto">
@@ -94,7 +95,7 @@ export default function Home() {
               No plans yet. Create your first plan.
             </div>
           ) : (
-            plans.map((plan) => {
+            plans.slice(0, 5).map((plan) => {
               const percent = Math.min(
                 (plan.collected_amount / plan.goal_amount) * 100,
                 100
@@ -141,7 +142,16 @@ export default function Home() {
       </section>
 
       <section className="px-5 mt-8">
-        <h2 className="font-bold text-xl mb-4">Top Deals</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-xl">Top Deals</h2>
+
+          <a
+            href="/deals"
+            className="text-purple-700 font-semibold text-sm"
+          >
+            View All
+          </a>
+        </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-2xl p-3">
@@ -170,16 +180,45 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="px-5 mt-8">
+        <h2 className="font-bold text-xl mb-4">Quick Access</h2>
+
+        <div className="grid grid-cols-4 gap-3">
+          <a href="/deals" className="bg-white rounded-2xl p-4 text-center">
+            <div className="text-3xl">☕</div>
+            <p className="text-sm mt-2 font-semibold">Cafes</p>
+          </a>
+
+          <a href="/deals" className="bg-white rounded-2xl p-4 text-center">
+            <div className="text-3xl">🏨</div>
+            <p className="text-sm mt-2 font-semibold">Hotels</p>
+          </a>
+
+          <a href="/movies" className="bg-white rounded-2xl p-4 text-center">
+            <div className="text-3xl">🎬</div>
+            <p className="text-sm mt-2 font-semibold">Movies</p>
+          </a>
+
+          <a
+            href="/split-bill"
+            className="bg-white rounded-2xl p-4 text-center"
+          >
+            <div className="text-3xl">🧾</div>
+            <p className="text-sm mt-2 font-semibold">Split</p>
+          </a>
+        </div>
+      </section>
+
       <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t flex justify-around py-3">
-        <button className="flex flex-col items-center text-purple-700">
+        <a href="/" className="flex flex-col items-center text-purple-700">
           <HomeIcon size={22} />
           <span className="text-xs mt-1">Home</span>
-        </button>
+        </a>
 
-        <button className="flex flex-col items-center text-gray-500">
+        <a href="/plans" className="flex flex-col items-center text-gray-500">
           <Wallet size={22} />
           <span className="text-xs mt-1">Plans</span>
-        </button>
+        </a>
 
         <a
           href="/create-plan"
@@ -188,15 +227,15 @@ export default function Home() {
           <Plus size={28} />
         </a>
 
-        <button className="flex flex-col items-center text-gray-500">
+        <a href="/deals" className="flex flex-col items-center text-gray-500">
           <Ticket size={22} />
           <span className="text-xs mt-1">Deals</span>
-        </button>
+        </a>
 
-        <button className="flex flex-col items-center text-gray-500">
+        <a href="/profile" className="flex flex-col items-center text-gray-500">
           <User size={22} />
           <span className="text-xs mt-1">Profile</span>
-        </button>
+        </a>
       </div>
     </main>
   );
