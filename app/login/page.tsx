@@ -18,7 +18,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: "http://localhost:3000",
+        emailRedirectTo: "https://planz-theta.vercel.app/",
       },
     });
 
