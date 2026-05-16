@@ -1,35 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Chrome } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function loginWithEmail() {
-    if (!email) {
-      alert("Enter your email");
-      return;
-    }
-
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
+  async function loginWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
       options: {
-        emailRedirectTo: "https://planz-theta.vercel.app",
+        redirectTo: "https://planz-theta.vercel.app",
       },
     });
 
-    setLoading(false);
-
     if (error) {
       alert(error.message);
-      return;
     }
-
-    alert("Login link sent! Check your email.");
   }
 
   return (
@@ -40,22 +25,15 @@ export default function Login() {
         </h1>
 
         <p className="text-white/60 mt-2">
-          Login to save your personal plans.
+          Login with Google to continue.
         </p>
 
-        <input
-          className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none mt-8 placeholder:text-white/40"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
         <button
-          onClick={loginWithEmail}
-          disabled={loading}
-          className="w-full bg-purple-700 text-white p-4 rounded-2xl font-bold mt-4"
+          onClick={loginWithGoogle}
+          className="w-full bg-white text-black p-4 rounded-2xl font-bold mt-8 flex items-center justify-center gap-3"
         >
-          {loading ? "Sending..." : "Send Login Link"}
+          <Chrome size={22} />
+          Continue with Google
         </button>
 
         <a
