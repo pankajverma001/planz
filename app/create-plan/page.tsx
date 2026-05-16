@@ -10,10 +10,11 @@ export default function CreatePlan() {
   const [collectedAmount, setCollectedAmount] = useState("");
   const [members, setMembers] = useState("");
   const [loading, setLoading] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
 
   async function createPlan() {
-    if (!title || !goalAmount || !members) {
-      alert("Please fill plan name, goal amount, and members");
+    if (!title || !goalAmount) {
+      alert("Please fill plan name and goal amount");
       return;
     }
 
@@ -30,16 +31,25 @@ export default function CreatePlan() {
       return;
     }
 
-    const { error } = await supabase.from("plans").insert([
-      {
-        title,
-        category,
-        goal_amount: Number(goalAmount),
-        collected_amount: Number(collectedAmount || 0),
-        members,
-        user_id: user.id,
-      },
-    ]);
+    const inviteCode =
+      Math.random().toString(36).substring(2, 10) +
+      Date.now().toString(36);
+
+    const { data, error } = await supabase
+      .from("plans")
+      .insert([
+        {
+          title,
+          category,
+          goal_amount: Number(goalAmount),
+          collected_amount: Number(collectedAmount || 0),
+          members: members || user.email,
+          user_id: user.id,
+          invite_code: inviteCode,
+        },
+      ])
+      .select()
+      .single();
 
     setLoading(false);
 
@@ -48,7 +58,10 @@ export default function CreatePlan() {
       return;
     }
 
-    alert("Plan created successfully!");
+    const link = `https://planz-theta.vercel.app/join/${data.invite_code}`;
+    setInviteLink(link);
+
+    alert("Group plan created! Share invite link with friends.");
 
     setTitle("");
     setCategory("Coffee Party");
@@ -65,9 +78,9 @@ export default function CreatePlan() {
         </a>
 
         <div className="bg-gradient-to-br from-purple-700 via-violet-600 to-pink-500 rounded-3xl p-6 mt-6 shadow-2xl">
-          <h1 className="text-3xl font-bold">Create a Plan</h1>
+          <h1 className="text-3xl font-bold">Create Group Plan</h1>
           <p className="text-white/80 mt-2">
-            Start saving with your people.
+            Create a plan and share invite link with friends.
           </p>
         </div>
 
@@ -99,7 +112,7 @@ export default function CreatePlan() {
             value={members}
             onChange={(e) => setMembers(e.target.value)}
             className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/50"
-            placeholder="Members name"
+            placeholder="Members text optional"
           />
 
           <select
@@ -119,9 +132,36 @@ export default function CreatePlan() {
             disabled={loading}
             className="w-full bg-purple-600 text-white p-4 rounded-2xl font-bold shadow-lg"
           >
-            {loading ? "Creating..." : "Create Plan"}
+            {loading ? "Creating..." : "Create Group Plan"}
           </button>
         </div>
+
+        {inviteLink && (
+          <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mt-6">
+            <h2 className="text-xl font-bold">Invite Link</h2>
+
+            <p className="text-white/60 text-sm break-all mt-3">
+              {inviteLink}
+            </p>
+
+            <button
+              onClick={() => navigator.clipboard.writeText(inviteLink)}
+              className="w-full bg-blue-500 p-4 rounded-2xl font-bold mt-4"
+            >
+              Copy Invite Link
+            </button>
+
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(
+                `Join my PlanZ group plan: ${inviteLink}`
+              )}`}
+              target="_blank"
+              className="block text-center w-full bg-green-500 p-4 rounded-2xl font-bold mt-3"
+            >
+              Share on WhatsApp
+            </a>
+          </div>
+        )}
       </div>
     </main>
   );
