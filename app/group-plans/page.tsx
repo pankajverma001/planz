@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, UserPlus, Trash2, IndianRupee } from "lucide-react";
+import { Users, UserPlus, Trash2, IndianRupee, MessageCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Plan = {
@@ -9,39 +9,36 @@ type Plan = {
   title: string;
 };
 
-type Friend = {
-  id: number;
-  name: string;
-};
-
 type GroupMember = {
   id: number;
+  user_email: string;
   contribution_amount: number;
   plans: { title: string }[];
-  friends: { name: string }[];
 };
 
 export default function GroupPlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [friends, setFriends] = useState<Friend[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [planId, setPlanId] = useState("");
-  const [friendId, setFriendId] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
 
   useEffect(() => {
     getPlans();
-    getFriends();
     getMembers();
   }, []);
 
   async function getPlans() {
-    const { data } = await supabase.from("plans").select("id,title");
-    setPlans(data || []);
-  }
+    const { data, error } = await supabase
+      .from("plans")
+      .select("id,title")
+      .order("created_at", { ascending: false });
 
-  async function getFriends() {
-    const { data } = await supabase.from("friends").select("id,name");
-    setFriends(data || []);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setPlans(data || []);
   }
 
   async function getMembers() {
@@ -49,9 +46,9 @@ export default function GroupPlans() {
       .from("group_members")
       .select(`
         id,
+        user_email,
         contribution_amount,
-        plans(title),
-        friends(name)
+        plans(title)
       `)
       .order("created_at", { ascending: false });
 
@@ -64,15 +61,15 @@ export default function GroupPlans() {
   }
 
   async function addMember() {
-    if (!planId || !friendId) {
-      alert("Select plan and friend");
+    if (!planId || !memberEmail) {
+      alert("Select plan and enter member email");
       return;
     }
 
     const { error } = await supabase.from("group_members").insert([
       {
         plan_id: Number(planId),
-        friend_id: Number(friendId),
+        user_email: memberEmail.toLowerCase().trim(),
         contribution_amount: 0,
       },
     ]);
@@ -82,8 +79,10 @@ export default function GroupPlans() {
       return;
     }
 
+    alert("Member added by email!");
+
     setPlanId("");
-    setFriendId("");
+    setMemberEmail("");
     getMembers();
   }
 
@@ -107,7 +106,7 @@ export default function GroupPlans() {
     await supabase.from("notifications").insert([
       {
         title: "Member Contribution Added",
-        message: `${member.friends?.[0]?.name} added ₹${amount} to ${member.plans?.[0]?.title}`,
+        message: `${member.user_email} added ₹${amount} to ${member.plans?.[0]?.title}`,
       },
     ]);
 
@@ -139,9 +138,9 @@ export default function GroupPlans() {
 
         <div className="bg-gradient-to-br from-purple-700 to-pink-500 rounded-3xl p-6 mt-6">
           <Users size={38} />
-          <h1 className="text-3xl font-bold mt-4">Group Plans</h1>
+          <h1 className="text-3xl font-bold mt-4">Shared Group Plans</h1>
           <p className="text-white/70 mt-1">
-            Track individual friend contributions.
+            Add members by email. They can see this plan after login.
           </p>
         </div>
 
@@ -151,7 +150,8 @@ export default function GroupPlans() {
             onChange={(e) => setPlanId(e.target.value)}
             className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none"
           >
-            <option value="">Select Plan</option>
+            <option value="">Select Your Plan</option>
+
             {plans.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.title}
@@ -159,32 +159,26 @@ export default function GroupPlans() {
             ))}
           </select>
 
-          <select
-            value={friendId}
-            onChange={(e) => setFriendId(e.target.value)}
-            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none"
-          >
-            <option value="">Select Friend</option>
-            {friends.map((friend) => (
-              <option key={friend.id} value={friend.id}>
-                {friend.name}
-              </option>
-            ))}
-          </select>
+          <input
+            value={memberEmail}
+            onChange={(e) => setMemberEmail(e.target.value)}
+            placeholder="Friend email used for login"
+            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/40"
+          />
 
           <button
             onClick={addMember}
             className="w-full bg-purple-700 p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
           >
             <UserPlus size={20} />
-            Add Friend to Plan
+            Add Member to Plan
           </button>
         </div>
 
         <div className="mt-6 space-y-4">
           {members.length === 0 ? (
             <div className="bg-white/10 border border-white/10 rounded-3xl p-5 text-center text-white/50">
-              No group members yet.
+              No shared members yet.
             </div>
           ) : (
             members.map((member) => (
@@ -194,9 +188,7 @@ export default function GroupPlans() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="font-bold text-lg">
-                      {member.friends?.[0]?.name}
-                    </h2>
+                    <h2 className="font-bold text-lg">{member.user_email}</h2>
 
                     <p className="text-white/50 text-sm">
                       Plan: {member.plans?.[0]?.title}
@@ -222,6 +214,14 @@ export default function GroupPlans() {
                   <IndianRupee size={18} />
                   Add Member Contribution
                 </button>
+
+                <a
+                  href="/group-chat"
+                  className="w-full bg-blue-500 text-white p-3 rounded-2xl font-bold mt-3 flex items-center justify-center gap-2"
+                >
+                  <MessageCircle size={18} />
+                  Open Group Chat
+                </a>
               </div>
             ))
           )}
