@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Send, Share2, IndianRupee, Users } from "lucide-react";
+import {
+  Send,
+  Share2,
+  IndianRupee,
+  Users,
+  Trash2,
+} from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 type Message = {
@@ -32,6 +38,7 @@ type ContributionRecord = {
 
 type GroupMember = {
   id: number;
+  user_id: string;
   user_email: string;
   role: string;
   contribution_amount: number;
@@ -47,6 +54,7 @@ export default function PlanChatPage() {
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [text, setText] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     loadUser();
@@ -78,6 +86,7 @@ export default function PlanChatPage() {
           if (newRecord.plan_id === planId) {
             setRecords((current) => [newRecord, ...current]);
             getPlan();
+            getMembers();
           }
         }
       )
@@ -98,6 +107,7 @@ export default function PlanChatPage() {
       return;
     }
 
+    setUserId(user.id);
     setUserEmail(user.email || "");
   }
 
@@ -119,7 +129,7 @@ export default function PlanChatPage() {
   async function getMembers() {
     const { data, error } = await supabase
       .from("group_members")
-      .select("id,user_email,role,contribution_amount")
+      .select("id,user_id,user_email,role,contribution_amount")
       .eq("plan_id", planId)
       .order("role", { ascending: true });
 
@@ -220,6 +230,18 @@ export default function PlanChatPage() {
       return;
     }
 
+    const currentMember = members.find((m) => m.user_id === user.id);
+
+    if (currentMember) {
+      await supabase
+        .from("group_members")
+        .update({
+          contribution_amount:
+            Number(currentMember.contribution_amount || 0) + amount,
+        })
+        .eq("id", currentMember.id);
+    }
+
     await supabase.from("contribution_records").insert([
       {
         plan_id: planId,
@@ -249,6 +271,38 @@ export default function PlanChatPage() {
 
     getPlan();
     getRecords();
+    getMembers();
+  }
+
+  async function removeMember(member: GroupMember) {
+    if (member.user_id === userId) {
+      alert("Admin cannot remove themselves.");
+      return;
+    }
+
+    if (!confirm(`Remove ${member.user_email} from this group?`)) return;
+
+    const { error } = await supabase
+      .from("group_members")
+      .delete()
+      .eq("id", member.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await supabase.from("group_messages").insert([
+      {
+        plan_id: planId,
+        user_id: userId,
+        user_email: userEmail,
+        message: `${member.user_email} was removed from the group`,
+        message_type: "system",
+      },
+    ]);
+
+    getMembers();
   }
 
   function inviteLink() {
@@ -267,6 +321,9 @@ export default function PlanChatPage() {
     await navigator.clipboard.writeText(link);
     alert("Invite link copied!");
   }
+
+  const currentMember = members.find((member) => member.user_id === userId);
+  const isAdmin = currentMember?.role === "admin";
 
   const totalContribution = records.reduce(
     (sum, record) => sum + Number(record.amount),
@@ -299,6 +356,11 @@ export default function PlanChatPage() {
           <div className="flex items-center gap-2 mt-4 text-white/80">
             <Users size={18} />
             <span>{members.length} members</span>
+            {isAdmin && (
+              <span className="bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold">
+                You are Admin
+              </span>
+            )}
           </div>
 
           {plan && (
@@ -346,24 +408,36 @@ export default function PlanChatPage() {
               members.map((member) => (
                 <div
                   key={member.id}
-                  className="flex justify-between items-center bg-white/10 rounded-2xl p-3"
+                  className="bg-white/10 rounded-2xl p-3"
                 >
-                  <div>
-                    <p className="font-bold text-sm">{member.user_email}</p>
-                    <p className="text-white/50 text-xs">
-                      Total: ₹{member.contribution_amount || 0}
-                    </p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-sm">{member.user_email}</p>
+                      <p className="text-white/50 text-xs">
+                        Total: ₹{member.contribution_amount || 0}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-bold ${
+                        member.role === "admin"
+                          ? "bg-yellow-400 text-black"
+                          : "bg-purple-700 text-white"
+                      }`}
+                    >
+                      {member.role === "admin" ? "Admin" : "Member"}
+                    </span>
                   </div>
 
-                  <span
-                    className={`text-xs px-3 py-1 rounded-full font-bold ${
-                      member.role === "admin"
-                        ? "bg-yellow-400 text-black"
-                        : "bg-purple-700 text-white"
-                    }`}
-                  >
-                    {member.role === "admin" ? "Admin" : "Member"}
-                  </span>
+                  {isAdmin && member.user_id !== userId && (
+                    <button
+                      onClick={() => removeMember(member)}
+                      className="w-full bg-red-500 text-white p-3 rounded-2xl font-bold mt-3 flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={18} />
+                      Remove Member
+                    </button>
+                  )}
                 </div>
               ))
             )}
@@ -399,6 +473,7 @@ export default function PlanChatPage() {
           {messages.map((msg) => {
             const isMe = msg.user_email === userEmail;
             const isContribution = msg.message_type === "contribution";
+            const isSystem = msg.message_type === "system";
 
             if (isContribution) {
               return (
@@ -412,6 +487,17 @@ export default function PlanChatPage() {
                   <p className="text-white/60 text-sm mt-1">
                     {msg.user_email}
                   </p>
+                </div>
+              );
+            }
+
+            if (isSystem) {
+              return (
+                <div
+                  key={msg.id}
+                  className="bg-white/10 border border-white/10 rounded-3xl p-3 text-center text-white/60 text-sm"
+                >
+                  {msg.message}
                 </div>
               );
             }
