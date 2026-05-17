@@ -8,6 +8,7 @@ import {
   IndianRupee,
   Users,
   Trash2,
+  CheckCircle,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -27,6 +28,7 @@ type Plan = {
   goal_amount: number;
   collected_amount: number;
   invite_code: string;
+  status: string;
 };
 
 type ContributionRecord = {
@@ -114,7 +116,7 @@ export default function PlanChatPage() {
   async function getPlan() {
     const { data, error } = await supabase
       .from("plans")
-      .select("id,title,goal_amount,collected_amount,invite_code")
+      .select("id,title,goal_amount,collected_amount,invite_code,status")
       .eq("id", planId)
       .single();
 
@@ -199,6 +201,11 @@ export default function PlanChatPage() {
   }
 
   async function addContribution() {
+    if (plan?.status === "completed") {
+      alert("This plan is already completed. Contributions are closed.");
+      return;
+    }
+
     const amountText = prompt("Enter contribution amount ₹");
     if (!amountText) return;
 
@@ -262,16 +269,45 @@ export default function PlanChatPage() {
       },
     ]);
 
-    await supabase.from("notifications").insert([
+    getPlan();
+    getRecords();
+    getMembers();
+  }
+
+  async function completePlan() {
+    if (!isAdmin) {
+      alert("Only admin can complete this plan.");
+      return;
+    }
+
+    if (plan?.status === "completed") {
+      alert("Plan is already completed.");
+      return;
+    }
+
+    if (!confirm("Mark this plan as completed?")) return;
+
+    const { error } = await supabase
+      .from("plans")
+      .update({ status: "completed" })
+      .eq("id", planId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await supabase.from("group_messages").insert([
       {
-        title: "Contribution Added",
-        message: `${user.email} added ₹${amount} to ${plan?.title}`,
+        plan_id: planId,
+        user_id: userId,
+        user_email: userEmail,
+        message: "This plan was marked as completed by admin.",
+        message_type: "system",
       },
     ]);
 
     getPlan();
-    getRecords();
-    getMembers();
   }
 
   async function removeMember(member: GroupMember) {
@@ -345,9 +381,21 @@ export default function PlanChatPage() {
         </a>
 
         <div className="bg-gradient-to-r from-purple-700 to-pink-500 rounded-3xl p-5 mt-5">
-          <h1 className="text-3xl font-bold">
-            {plan?.title || "Group Chat"}
-          </h1>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-3xl font-bold">
+              {plan?.title || "Group Chat"}
+            </h1>
+
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-bold ${
+                plan?.status === "completed"
+                  ? "bg-green-400 text-black"
+                  : "bg-white/20 text-white"
+              }`}
+            >
+              {plan?.status === "completed" ? "Completed" : "Active"}
+            </span>
+          </div>
 
           <p className="text-white/70 mt-2">
             Private chat, members, invite, and contributions.
@@ -391,12 +439,27 @@ export default function PlanChatPage() {
 
           <button
             onClick={addContribution}
-            className="bg-green-500 p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
+            disabled={plan?.status === "completed"}
+            className={`p-4 rounded-2xl font-bold flex items-center justify-center gap-2 ${
+              plan?.status === "completed"
+                ? "bg-gray-600 text-gray-300"
+                : "bg-green-500 text-white"
+            }`}
           >
             <IndianRupee size={18} />
             Contribute
           </button>
         </div>
+
+        {isAdmin && plan?.status !== "completed" && (
+          <button
+            onClick={completePlan}
+            className="w-full bg-yellow-400 text-black p-4 rounded-2xl font-bold mt-3 flex items-center justify-center gap-2"
+          >
+            <CheckCircle size={20} />
+            Complete Plan
+          </button>
+        )}
 
         <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mt-5">
           <h2 className="font-bold text-xl">Members</h2>
@@ -406,10 +469,7 @@ export default function PlanChatPage() {
               <p className="text-white/40 text-sm">No members yet.</p>
             ) : (
               members.map((member) => (
-                <div
-                  key={member.id}
-                  className="bg-white/10 rounded-2xl p-3"
-                >
+                <div key={member.id} className="bg-white/10 rounded-2xl p-3">
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-bold text-sm">{member.user_email}</p>
