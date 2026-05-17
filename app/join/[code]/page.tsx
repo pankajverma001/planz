@@ -51,11 +51,12 @@ export default function JoinGroup() {
       .from("group_members")
       .insert([
         {
-          plan_id: plan.id,
-          user_id: user.id,
-          user_email: user.email,
-          contribution_amount: 0,
-        },
+  plan_id: plan.id,
+  user_id: user.id,
+  user_email: user.email,
+  contribution_amount: 0,
+  role: "member",
+},
       ]);
 
     if (error) {
