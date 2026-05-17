@@ -122,7 +122,7 @@ export default function Plans() {
 
                   <div className="flex gap-3 mt-5">
                     <a
-                      href={`/group-chat`}
+                      href={`/group-chat/${plan.id}`}
                       className="flex-1 bg-blue-500 p-3 rounded-2xl text-center font-bold"
                     >
                       Open Chat
