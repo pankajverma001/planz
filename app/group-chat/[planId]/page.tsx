@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Send, Share2, IndianRupee } from "lucide-react";
+import { Send, Share2, IndianRupee, Users } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 type Message = {
@@ -30,6 +30,13 @@ type ContributionRecord = {
   created_at: string;
 };
 
+type GroupMember = {
+  id: number;
+  user_email: string;
+  role: string;
+  contribution_amount: number;
+};
+
 export default function PlanChatPage() {
   const params = useParams();
   const planId = Number(params.planId);
@@ -37,6 +44,7 @@ export default function PlanChatPage() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [records, setRecords] = useState<ContributionRecord[]>([]);
+  const [members, setMembers] = useState<GroupMember[]>([]);
   const [text, setText] = useState("");
   const [userEmail, setUserEmail] = useState("");
 
@@ -45,19 +53,15 @@ export default function PlanChatPage() {
     getPlan();
     getMessages();
     getRecords();
+    getMembers();
 
     const channel = supabase
       .channel(`plan-chat-${planId}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "group_messages",
-        },
+        { event: "INSERT", schema: "public", table: "group_messages" },
         (payload) => {
           const newMessage = payload.new as Message;
-
           if (newMessage.plan_id === planId) {
             setMessages((current) => [...current, newMessage]);
           }
@@ -65,11 +69,7 @@ export default function PlanChatPage() {
       )
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "contribution_records",
-        },
+        { event: "INSERT", schema: "public", table: "contribution_records" },
         (payload) => {
           const newRecord = payload.new as ContributionRecord & {
             plan_id: number;
@@ -114,6 +114,21 @@ export default function PlanChatPage() {
     }
 
     setPlan(data);
+  }
+
+  async function getMembers() {
+    const { data, error } = await supabase
+      .from("group_members")
+      .select("id,user_email,role,contribution_amount")
+      .eq("plan_id", planId)
+      .order("role", { ascending: true });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setMembers(data || []);
   }
 
   async function getMessages() {
@@ -197,9 +212,7 @@ export default function PlanChatPage() {
 
     const { error: planError } = await supabase
       .from("plans")
-      .update({
-        collected_amount: newCollected,
-      })
+      .update({ collected_amount: newCollected })
       .eq("id", planId);
 
     if (planError) {
@@ -240,7 +253,6 @@ export default function PlanChatPage() {
 
   function inviteLink() {
     if (!plan?.invite_code) return "";
-
     return `https://planz-theta.vercel.app/join/${plan.invite_code}`;
   }
 
@@ -262,7 +274,10 @@ export default function PlanChatPage() {
   );
 
   const progress = plan
-    ? Math.min((Number(plan.collected_amount) / Number(plan.goal_amount)) * 100, 100)
+    ? Math.min(
+        (Number(plan.collected_amount) / Number(plan.goal_amount)) * 100,
+        100
+      )
     : 0;
 
   return (
@@ -278,8 +293,13 @@ export default function PlanChatPage() {
           </h1>
 
           <p className="text-white/70 mt-2">
-            Private chat, invite members, and track contributions.
+            Private chat, members, invite, and contributions.
           </p>
+
+          <div className="flex items-center gap-2 mt-4 text-white/80">
+            <Users size={18} />
+            <span>{members.length} members</span>
+          </div>
 
           {plan && (
             <div className="mt-5">
@@ -317,6 +337,40 @@ export default function PlanChatPage() {
         </div>
 
         <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mt-5">
+          <h2 className="font-bold text-xl">Members</h2>
+
+          <div className="mt-4 space-y-3">
+            {members.length === 0 ? (
+              <p className="text-white/40 text-sm">No members yet.</p>
+            ) : (
+              members.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex justify-between items-center bg-white/10 rounded-2xl p-3"
+                >
+                  <div>
+                    <p className="font-bold text-sm">{member.user_email}</p>
+                    <p className="text-white/50 text-xs">
+                      Total: ₹{member.contribution_amount || 0}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-bold ${
+                      member.role === "admin"
+                        ? "bg-yellow-400 text-black"
+                        : "bg-purple-700 text-white"
+                    }`}
+                  >
+                    {member.role === "admin" ? "Admin" : "Member"}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mt-5">
           <p className="text-white/50 text-sm">Total Contribution Records</p>
           <h2 className="text-3xl font-bold text-purple-300 mt-2">
             ₹{totalContribution}
@@ -324,7 +378,9 @@ export default function PlanChatPage() {
 
           <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
             {records.length === 0 ? (
-              <p className="text-white/40 text-sm">No contribution records yet.</p>
+              <p className="text-white/40 text-sm">
+                No contribution records yet.
+              </p>
             ) : (
               records.map((record) => (
                 <div
