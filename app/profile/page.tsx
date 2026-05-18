@@ -6,16 +6,15 @@ import { supabase } from "../lib/supabase";
 
 type Profile = {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
-  avatar_url: string;
+  date_of_birth: string;
 };
 
-export default function Profile() {
+export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [name, setName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [totalSaved, setTotalSaved] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const [dob, setDob] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,8 +31,6 @@ export default function Profile() {
       return;
     }
 
-    const email = user.email || "";
-
     let { data } = await supabase
       .from("profiles")
       .select("*")
@@ -44,9 +41,9 @@ export default function Profile() {
       await supabase.from("profiles").insert([
         {
           id: user.id,
-          name: "PlanZ User",
-          email,
-          avatar_url: "",
+          full_name: user.user_metadata?.full_name || "PlanZ User",
+          email: user.email,
+          date_of_birth: null,
         },
       ]);
 
@@ -59,21 +56,9 @@ export default function Profile() {
       data = result.data;
     }
 
-    const { data: plans } = await supabase
-      .from("plans")
-      .select("collected_amount")
-      .eq("user_id", user.id);
-
-    const saved =
-      plans?.reduce(
-        (sum, plan) => sum + Number(plan.collected_amount),
-        0
-      ) || 0;
-
     setProfile(data);
-    setName(data?.name || "");
-    setAvatarUrl(data?.avatar_url || "");
-    setTotalSaved(saved);
+    setFullName(data?.full_name || "");
+    setDob(data?.date_of_birth || "");
     setLoading(false);
   }
 
@@ -83,8 +68,8 @@ export default function Profile() {
     const { error } = await supabase
       .from("profiles")
       .update({
-        name,
-        avatar_url: avatarUrl,
+        full_name: fullName,
+        date_of_birth: dob || null,
       })
       .eq("id", profile.id);
 
@@ -104,66 +89,51 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0B0714] text-white flex items-center justify-center">
+      <main className="min-h-screen bg-[#F6F3FB] flex items-center justify-center">
         Loading profile...
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0714] text-white p-5">
-      <div className="max-w-[430px] mx-auto">
-        <a href="/" className="text-purple-300 font-bold">
+    <main className="min-h-screen bg-[#F6F3FB] text-black pb-10">
+      <div className="max-w-[430px] mx-auto p-5">
+        <a href="/" className="text-purple-700 font-bold">
           ← Back
         </a>
 
-        <div className="bg-gradient-to-br from-purple-700 to-pink-500 rounded-3xl p-6 mt-6 text-center">
-          <div className="w-24 h-24 rounded-full bg-white/20 mx-auto flex items-center justify-center overflow-hidden">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <User size={42} />
-            )}
+        <div className="bg-gradient-to-br from-purple-700 to-pink-500 rounded-[32px] p-7 mt-6 text-white text-center shadow-xl">
+          <div className="w-24 h-24 rounded-full bg-white/20 mx-auto flex items-center justify-center">
+            <User size={44} />
           </div>
 
           <h1 className="text-3xl font-bold mt-4">
-            {name || "PlanZ User"}
+            {fullName || "PlanZ User"}
           </h1>
 
           <p className="text-white/70 mt-1">
-            {profile?.email}
+            Your PlanZ profile
           </p>
         </div>
 
-        <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mt-6">
-          <p className="text-white/50">Total Saved</p>
-          <h2 className="text-4xl font-bold text-purple-300 mt-2">
-            ₹{totalSaved}
-          </h2>
-        </div>
-
-        <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mt-6 space-y-4">
+        <div className="bg-white rounded-3xl p-5 mt-6 shadow-sm space-y-4">
           <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/40"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Your registered name"
+            className="w-full p-4 rounded-2xl bg-[#F6F3FB] outline-none"
           />
 
           <input
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="Profile image URL"
-            className="w-full p-4 rounded-2xl bg-white/10 border border-white/10 outline-none placeholder:text-white/40"
+            value={dob || ""}
+            onChange={(e) => setDob(e.target.value)}
+            type="date"
+            className="w-full p-4 rounded-2xl bg-[#F6F3FB] outline-none"
           />
 
           <button
             onClick={updateProfile}
-            className="w-full bg-purple-700 p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
+            className="w-full bg-purple-700 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
           >
             <Save size={20} />
             Save Profile
@@ -171,7 +141,7 @@ export default function Profile() {
 
           <button
             onClick={logout}
-            className="w-full bg-red-500 p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
+            className="w-full bg-red-500 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
           >
             <LogOut size={20} />
             Logout
