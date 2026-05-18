@@ -25,7 +25,25 @@ export default function HomePage() {
   const [userName, setUserName] = useState("User");
 
   useEffect(() => {
-    loadUser();
+    async function loadUser() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.full_name) {
+    setUserName(profile.full_name);
+  } else if (user.user_metadata?.full_name) {
+    setUserName(user.user_metadata.full_name);
+  }
+}
     getPlans();
   }, []);
 
