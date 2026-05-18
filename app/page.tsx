@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import {
-  Bell,
-  Moon,
   Plus,
-  Home,
   Wallet,
   User,
-  Ticket,
+  Home,
+  MessageCircle,
 } from "lucide-react";
 
 import { supabase } from "./lib/supabase";
@@ -19,12 +17,11 @@ type Plan = {
   category: string;
   goal_amount: number;
   collected_amount: number;
-  members: string;
+  status: string;
 };
 
 export default function HomePage() {
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [darkMode, setDarkMode] = useState(false);
   const [userName, setUserName] = useState("User");
 
   useEffect(() => {
@@ -46,7 +43,8 @@ export default function HomePage() {
     const { data, error } = await supabase
       .from("plans")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(5);
 
     if (error) {
       console.log(error.message);
@@ -57,200 +55,181 @@ export default function HomePage() {
   }
 
   return (
-    <main
-      className={`min-h-screen pb-28 transition-all duration-300 ${
-        darkMode
-          ? "bg-[#0B0714] text-white"
-          : "bg-[#F4F1FA] text-black"
-      }`}
-    >
+    <main className="min-h-screen bg-[#F6F3FB] text-black pb-28">
       <div className="max-w-[430px] mx-auto p-5">
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold">
+            <p className="text-gray-500 text-sm">
+              Welcome Back
+            </p>
+
+            <h1 className="text-4xl font-bold mt-1">
               Hi, {userName} 👋
             </h1>
-
-            <p className="text-gray-500 mt-1">
-              Good Evening!
-            </p>
           </div>
 
-          <div className="flex gap-3">
-            <button
-              className="w-14 h-14 rounded-full bg-purple-700 text-white flex items-center justify-center"
-            >
-              <Bell />
-            </button>
-
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="w-14 h-14 rounded-full bg-purple-700 text-white flex items-center justify-center"
-            >
-              <Moon />
-            </button>
-          </div>
+          <a
+            href="/profile"
+            className="w-14 h-14 rounded-full bg-purple-700 text-white flex items-center justify-center"
+          >
+            <User size={24} />
+          </a>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-700 to-pink-500 rounded-[32px] p-7 mt-8 shadow-xl">
-          <h2 className="text-5xl font-bold text-white leading-tight">
-            Save Together,
+        <div className="bg-gradient-to-br from-purple-700 to-pink-500 rounded-[32px] p-7 mt-8 shadow-xl text-white">
+          <h2 className="text-4xl font-bold leading-tight">
+            Save Together.
             <br />
-            Celebrate Better
+            Enjoy Together.
           </h2>
 
-          <p className="text-white/80 mt-5 text-lg">
-            Create plans and save money with your friends,
-            family and partner.
+          <p className="text-white/80 mt-4 text-lg">
+            Create private group plans with friends,
+            track contributions, and manage shared goals.
           </p>
 
           <a
             href="/create-plan"
-            className="inline-block mt-8 bg-white text-purple-700 px-8 py-4 rounded-2xl font-bold text-lg"
+            className="inline-flex items-center gap-2 mt-7 bg-white text-purple-700 px-6 py-4 rounded-2xl font-bold"
           >
-            Create a Plan
+            <Plus size={20} />
+            Create Plan
           </a>
         </div>
 
-        <div className="flex items-center justify-between mt-10">
-          <h2 className="text-3xl font-bold">
-            Your Plans
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <a
+            href="/plans"
+            className="bg-white rounded-3xl p-5 shadow-sm"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+              <Wallet className="text-purple-700" />
+            </div>
+
+            <h3 className="font-bold text-xl mt-4">
+              My Plans
+            </h3>
+
+            <p className="text-gray-500 text-sm mt-2">
+              View your active and completed plans.
+            </p>
+          </a>
+
+          <a
+            href="/profile"
+            className="bg-white rounded-3xl p-5 shadow-sm"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-pink-100 flex items-center justify-center">
+              <User className="text-pink-600" />
+            </div>
+
+            <h3 className="font-bold text-xl mt-4">
+              Profile
+            </h3>
+
+            <p className="text-gray-500 text-sm mt-2">
+              Manage your account and activity.
+            </p>
+          </a>
+        </div>
+
+        <div className="mt-10 flex items-center justify-between">
+          <h2 className="text-2xl font-bold">
+            Recent Plans
           </h2>
 
           <a
             href="/plans"
-            className="text-purple-500 font-bold"
+            className="text-purple-700 font-bold"
           >
             View All
           </a>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto mt-5 pb-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`min-w-[250px] rounded-3xl p-4 shadow-lg ${
-                darkMode
-                  ? "bg-white/10 border border-white/10"
-                  : "bg-white"
-              }`}
-            >
-              <div className="w-full h-32 rounded-3xl bg-[#E9D8FD] flex items-center justify-center text-6xl">
-                {plan.category === "Coffee Party"
-                  ? "☕"
-                  : plan.category === "Movie Plan"
-                  ? "🎬"
-                  : "🍕"}
-              </div>
-
-              <h3 className="text-2xl font-bold mt-4">
-                {plan.title}
-              </h3>
-
-              <p className="text-gray-500 mt-1">
-                ₹{plan.collected_amount} / ₹
-                {plan.goal_amount}
-              </p>
-
-              <div className="w-full h-3 bg-gray-200 rounded-full mt-4 overflow-hidden">
-                <div
-                  className="h-full bg-purple-600 rounded-full"
-                  style={{
-                    width: `${
-                      (plan.collected_amount /
-                        plan.goal_amount) *
-                      100
-                    }%`,
-                  }}
-                />
-              </div>
-
-              <p className="text-sm text-gray-500 mt-3">
-                {plan.members}
-              </p>
+        <div className="space-y-4 mt-5">
+          {plans.length === 0 ? (
+            <div className="bg-white rounded-3xl p-5 text-center text-gray-500">
+              No plans yet.
             </div>
-          ))}
-        </div>
+          ) : (
+            plans.map((plan) => {
+              const progress =
+                (plan.collected_amount /
+                  plan.goal_amount) *
+                100;
 
-        <div className="mt-10">
-          <h2 className="text-3xl font-bold">
-            Quick Access
-          </h2>
+              return (
+                <div
+                  key={plan.id}
+                  className="bg-white rounded-3xl p-5 shadow-sm"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold">
+                        {plan.title}
+                      </h3>
 
-          <div className="grid grid-cols-2 gap-4 mt-5">
-            <a
-              href="/group-plans"
-              className={`rounded-3xl p-6 text-center ${
-                darkMode
-                  ? "bg-white/10 border border-white/10"
-                  : "bg-white"
-              }`}
-            >
-              <div className="text-5xl">👥</div>
-              <p className="font-bold mt-3">
-                Groups
-              </p>
-            </a>
+                      <p className="text-gray-500 mt-1">
+                        {plan.category}
+                      </p>
+                    </div>
 
-            <a
-              href="/group-chat"
-              className={`rounded-3xl p-6 text-center ${
-                darkMode
-                  ? "bg-white/10 border border-white/10"
-                  : "bg-white"
-              }`}
-            >
-              <div className="text-5xl">💬</div>
-              <p className="font-bold mt-3">
-                Chats
-              </p>
-            </a>
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-bold ${
+                        plan.status === "completed"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}
+                    >
+                      {plan.status === "completed"
+                        ? "Completed"
+                        : "Active"}
+                    </span>
+                  </div>
 
-            <a
-              href="/split-bill"
-              className={`rounded-3xl p-6 text-center ${
-                darkMode
-                  ? "bg-white/10 border border-white/10"
-                  : "bg-white"
-              }`}
-            >
-              <div className="text-5xl">🧾</div>
-              <p className="font-bold mt-3">
-                Split
-              </p>
-            </a>
+                  <div className="mt-5">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>
+                        ₹{plan.collected_amount}
+                      </span>
 
-            <a
-              href="/profile"
-              className={`rounded-3xl p-6 text-center ${
-                darkMode
-                  ? "bg-white/10 border border-white/10"
-                  : "bg-white"
-              }`}
-            >
-              <div className="text-5xl">👤</div>
-              <p className="font-bold mt-3">
-                Profile
-              </p>
-            </a>
-          </div>
+                      <span>
+                        ₹{plan.goal_amount}
+                      </span>
+                    </div>
+
+                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-purple-600 rounded-full"
+                        style={{
+                          width: `${Math.min(progress, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <a
+                    href={`/group-chat/${plan.id}`}
+                    className="mt-5 w-full bg-purple-700 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle size={20} />
+                    Open Group
+                  </a>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
-      <div
-        className={`fixed bottom-0 left-0 right-0 border-t backdrop-blur-xl ${
-          darkMode
-            ? "bg-[#0B0714]/90 border-white/10"
-            : "bg-white/90 border-gray-200"
-        }`}
-      >
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
         <div className="max-w-[430px] mx-auto flex items-center justify-around py-4">
           <a
             href="/"
-            className="flex flex-col items-center text-purple-600"
+            className="flex flex-col items-center text-purple-700"
           >
-            <Home size={26} />
-            <span className="text-sm mt-1">
+            <Home size={24} />
+            <span className="text-xs mt-1">
               Home
             </span>
           </a>
@@ -259,35 +238,25 @@ export default function HomePage() {
             href="/plans"
             className="flex flex-col items-center text-gray-500"
           >
-            <Wallet size={26} />
-            <span className="text-sm mt-1">
+            <Wallet size={24} />
+            <span className="text-xs mt-1">
               Plans
             </span>
           </a>
 
           <a
             href="/create-plan"
-            className="w-16 h-16 rounded-full bg-purple-700 text-white flex items-center justify-center -mt-10 shadow-2xl"
+            className="w-16 h-16 rounded-full bg-purple-700 text-white flex items-center justify-center -mt-10 shadow-xl"
           >
-            <Plus size={32} />
-          </a>
-
-          <a
-            href="/deals"
-            className="flex flex-col items-center text-gray-500"
-          >
-            <Ticket size={26} />
-            <span className="text-sm mt-1">
-              Deals
-            </span>
+            <Plus size={30} />
           </a>
 
           <a
             href="/profile"
             className="flex flex-col items-center text-gray-500"
           >
-            <User size={26} />
-            <span className="text-sm mt-1">
+            <User size={24} />
+            <span className="text-xs mt-1">
               Profile
             </span>
           </a>
