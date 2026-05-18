@@ -14,6 +14,7 @@ import { supabase } from "../../lib/supabase";
 
 type Message = {
   id: number;
+  user_id: string;
   user_email: string;
   message: string;
   created_at: string;
@@ -33,6 +34,7 @@ type Plan = {
 
 type ContributionRecord = {
   id: number;
+  user_id: string;
   user_email: string;
   amount: number;
   created_at: string;
@@ -54,6 +56,7 @@ export default function PlanChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [records, setRecords] = useState<ContributionRecord[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
   const [text, setText] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
@@ -77,21 +80,6 @@ export default function PlanChatPage() {
           }
         }
       )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "contribution_records" },
-        (payload) => {
-          const newRecord = payload.new as ContributionRecord & {
-            plan_id: number;
-          };
-
-          if (newRecord.plan_id === planId) {
-            setRecords((current) => [newRecord, ...current]);
-            getPlan();
-            getMembers();
-          }
-        }
-      )
       .subscribe();
 
     return () => {
@@ -111,6 +99,29 @@ export default function PlanChatPage() {
 
     setUserId(user.id);
     setUserEmail(user.email || "");
+  }
+
+  async function loadNames(userIds: string[]) {
+    const uniqueIds = [...new Set(userIds.filter(Boolean))];
+
+    if (uniqueIds.length === 0) return;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("id,full_name")
+      .in("id", uniqueIds);
+
+    const map: Record<string, string> = {};
+
+    data?.forEach((profile) => {
+      map[profile.id] = profile.full_name || "PlanZ User";
+    });
+
+    setNames((old) => ({ ...old, ...map }));
+  }
+
+  function showName(userIdValue: string, email: string) {
+    return names[userIdValue] || email || "PlanZ User";
   }
 
   async function getPlan() {
@@ -141,6 +152,7 @@ export default function PlanChatPage() {
     }
 
     setMembers(data || []);
+    loadNames((data || []).map((m) => m.user_id));
   }
 
   async function getMessages() {
@@ -156,6 +168,7 @@ export default function PlanChatPage() {
     }
 
     setMessages(data || []);
+    loadNames((data || []).map((m) => m.user_id));
   }
 
   async function getRecords() {
@@ -171,6 +184,7 @@ export default function PlanChatPage() {
     }
 
     setRecords(data || []);
+    loadNames((data || []).map((r) => r.user_id));
   }
 
   async function sendMessage() {
@@ -202,7 +216,7 @@ export default function PlanChatPage() {
 
   async function addContribution() {
     if (plan?.status === "completed") {
-      alert("This plan is already completed. Contributions are closed.");
+      alert("This plan is already completed.");
       return;
     }
 
@@ -220,10 +234,7 @@ export default function PlanChatPage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
+    if (!user) return;
 
     const newCollected = Number(plan?.collected_amount || 0) + amount;
 
@@ -258,12 +269,14 @@ export default function PlanChatPage() {
       },
     ]);
 
+    const displayName = showName(user.id, user.email || "");
+
     await supabase.from("group_messages").insert([
       {
         plan_id: planId,
         user_id: user.id,
         user_email: user.email,
-        message: `${user.email} contributed ₹${amount}`,
+        message: `${displayName} contributed ₹${amount}`,
         message_type: "contribution",
         amount,
       },
@@ -274,18 +287,40 @@ export default function PlanChatPage() {
     getMembers();
   }
 
+  async function removeMember(member: GroupMember) {
+    if (member.user_id === userId) {
+      alert("Admin cannot remove themselves.");
+      return;
+    }
+
+    if (!confirm(`Remove ${showName(member.user_id, member.user_email)}?`))
+      return;
+
+    const { error } = await supabase
+      .from("group_members")
+      .delete()
+      .eq("id", member.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await supabase.from("group_messages").insert([
+      {
+        plan_id: planId,
+        user_id: userId,
+        user_email: userEmail,
+        message: `${showName(member.user_id, member.user_email)} was removed from the group`,
+        message_type: "system",
+      },
+    ]);
+
+    getMembers();
+  }
+
   async function completePlan() {
-    if (!isAdmin) {
-      alert("Only admin can complete this plan.");
-      return;
-    }
-
-    if (plan?.status === "completed") {
-      alert("Plan is already completed.");
-      return;
-    }
-
-    if (!confirm("Mark this plan as completed?")) return;
+    if (!isAdmin) return;
 
     const { error } = await supabase
       .from("plans")
@@ -310,51 +345,13 @@ export default function PlanChatPage() {
     getPlan();
   }
 
-  async function removeMember(member: GroupMember) {
-    if (member.user_id === userId) {
-      alert("Admin cannot remove themselves.");
-      return;
-    }
-
-    if (!confirm(`Remove ${member.user_email} from this group?`)) return;
-
-    const { error } = await supabase
-      .from("group_members")
-      .delete()
-      .eq("id", member.id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await supabase.from("group_messages").insert([
-      {
-        plan_id: planId,
-        user_id: userId,
-        user_email: userEmail,
-        message: `${member.user_email} was removed from the group`,
-        message_type: "system",
-      },
-    ]);
-
-    getMembers();
-  }
-
   function inviteLink() {
     if (!plan?.invite_code) return "";
     return `https://planz-theta.vercel.app/join/${plan.invite_code}`;
   }
 
   async function copyInvite() {
-    const link = inviteLink();
-
-    if (!link) {
-      alert("Invite link not found");
-      return;
-    }
-
-    await navigator.clipboard.writeText(link);
+    await navigator.clipboard.writeText(inviteLink());
     alert("Invite link copied!");
   }
 
@@ -381,32 +378,19 @@ export default function PlanChatPage() {
         </a>
 
         <div className="bg-gradient-to-r from-purple-700 to-pink-500 rounded-3xl p-5 mt-5">
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="text-3xl font-bold">
-              {plan?.title || "Group Chat"}
-            </h1>
-
-            <span
-              className={`text-xs px-3 py-1 rounded-full font-bold ${
-                plan?.status === "completed"
-                  ? "bg-green-400 text-black"
-                  : "bg-white/20 text-white"
-              }`}
-            >
-              {plan?.status === "completed" ? "Completed" : "Active"}
-            </span>
-          </div>
+          <h1 className="text-3xl font-bold">{plan?.title || "Group Chat"}</h1>
 
           <p className="text-white/70 mt-2">
-            Private chat, members, invite, and contributions.
+            Members, chat, invite and contributions.
           </p>
 
           <div className="flex items-center gap-2 mt-4 text-white/80">
             <Users size={18} />
             <span>{members.length} members</span>
+
             {isAdmin && (
               <span className="bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold">
-                You are Admin
+                Admin
               </span>
             )}
           </div>
@@ -440,11 +424,7 @@ export default function PlanChatPage() {
           <button
             onClick={addContribution}
             disabled={plan?.status === "completed"}
-            className={`p-4 rounded-2xl font-bold flex items-center justify-center gap-2 ${
-              plan?.status === "completed"
-                ? "bg-gray-600 text-gray-300"
-                : "bg-green-500 text-white"
-            }`}
+            className="bg-green-500 p-4 rounded-2xl font-bold flex items-center justify-center gap-2"
           >
             <IndianRupee size={18} />
             Contribute
@@ -465,42 +445,41 @@ export default function PlanChatPage() {
           <h2 className="font-bold text-xl">Members</h2>
 
           <div className="mt-4 space-y-3">
-            {members.length === 0 ? (
-              <p className="text-white/40 text-sm">No members yet.</p>
-            ) : (
-              members.map((member) => (
-                <div key={member.id} className="bg-white/10 rounded-2xl p-3">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-sm">{member.user_email}</p>
-                      <p className="text-white/50 text-xs">
-                        Total: ₹{member.contribution_amount || 0}
-                      </p>
-                    </div>
+            {members.map((member) => (
+              <div key={member.id} className="bg-white/10 rounded-2xl p-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-sm">
+                      {showName(member.user_id, member.user_email)}
+                    </p>
 
-                    <span
-                      className={`text-xs px-3 py-1 rounded-full font-bold ${
-                        member.role === "admin"
-                          ? "bg-yellow-400 text-black"
-                          : "bg-purple-700 text-white"
-                      }`}
-                    >
-                      {member.role === "admin" ? "Admin" : "Member"}
-                    </span>
+                    <p className="text-white/50 text-xs">
+                      Total: ₹{member.contribution_amount || 0}
+                    </p>
                   </div>
 
-                  {isAdmin && member.user_id !== userId && (
-                    <button
-                      onClick={() => removeMember(member)}
-                      className="w-full bg-red-500 text-white p-3 rounded-2xl font-bold mt-3 flex items-center justify-center gap-2"
-                    >
-                      <Trash2 size={18} />
-                      Remove Member
-                    </button>
-                  )}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-bold ${
+                      member.role === "admin"
+                        ? "bg-yellow-400 text-black"
+                        : "bg-purple-700 text-white"
+                    }`}
+                  >
+                    {member.role === "admin" ? "Admin" : "Member"}
+                  </span>
                 </div>
-              ))
-            )}
+
+                {isAdmin && member.user_id !== userId && (
+                  <button
+                    onClick={() => removeMember(member)}
+                    className="w-full bg-red-500 text-white p-3 rounded-2xl font-bold mt-3 flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={18} />
+                    Remove Member
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -511,27 +490,21 @@ export default function PlanChatPage() {
           </h2>
 
           <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-            {records.length === 0 ? (
-              <p className="text-white/40 text-sm">
-                No contribution records yet.
-              </p>
-            ) : (
-              records.map((record) => (
-                <div
-                  key={record.id}
-                  className="flex justify-between text-sm bg-white/10 rounded-2xl p-3"
-                >
-                  <span>{record.user_email}</span>
-                  <span>₹{record.amount}</span>
-                </div>
-              ))
-            )}
+            {records.map((record) => (
+              <div
+                key={record.id}
+                className="flex justify-between text-sm bg-white/10 rounded-2xl p-3"
+              >
+                <span>{showName(record.user_id, record.user_email)}</span>
+                <span>₹{record.amount}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="space-y-3 mt-6">
           {messages.map((msg) => {
-            const isMe = msg.user_email === userEmail;
+            const isMe = msg.user_id === userId;
             const isContribution = msg.message_type === "contribution";
             const isSystem = msg.message_type === "system";
 
@@ -544,8 +517,9 @@ export default function PlanChatPage() {
                   <p className="font-bold text-green-300">
                     ₹{msg.amount} contribution added
                   </p>
+
                   <p className="text-white/60 text-sm mt-1">
-                    {msg.user_email}
+                    {showName(msg.user_id, msg.user_email)}
                   </p>
                 </div>
               );
@@ -575,7 +549,7 @@ export default function PlanChatPage() {
                   }`}
                 >
                   <p className="text-xs text-white/50 mb-1">
-                    {isMe ? "You" : msg.user_email}
+                    {isMe ? "You" : showName(msg.user_id, msg.user_email)}
                   </p>
 
                   <p>{msg.message}</p>
